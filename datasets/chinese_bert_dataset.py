@@ -8,11 +8,11 @@ import tokenizers
 from pypinyin import pinyin, Style
 from tokenizers import BertWordPieceTokenizer
 from torch.utils.data import Dataset
+# from datasets.utils import pho_convertor
 from datasets.utils import pho_convertor
 
-
 class ChineseBertDataset(Dataset):
-
+    
     def __init__(self, data_path, chinese_bert_path, max_length: int = 512):
         """
         Dataset Base class
@@ -104,7 +104,7 @@ class ChineseBertDataset(Dataset):
 
 
 if __name__=='__main__':
-    a=ChineseBertDataset(None,'/home/ljh/model/ChineseBERT-base')
+    a=ChineseBertDataset(None,'/home/mdh19/test_projects/SCOPE/FPT')
     text='我爱你，中国'
     # text='因为从你到台湾留学的那天至今已过了半年我们就没机会像之前能经常见面的聊东聊西。'
     encoded=a.tokenizer.encode(text)

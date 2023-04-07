@@ -64,6 +64,7 @@ class hanzi2pinyin():
 
         return pinyin_ids
 
+    #! 细粒度分成声母 韵母 声调
     def convert_sentence_to_shengmu_yunmu_shengdiao_ids(self, sentence, tokenizer_output):
         # get pinyin of a sentence
         pinyin_list = pinyin(sentence, style=Style.TONE3, neutral_tone_with_five=True,
@@ -126,11 +127,16 @@ def all_train_data_to_pickle_with_tgt_pinyinid(data_path, output_dir, vocab_path
         data_path=os.path.join(data_path, 'train.sighan14-2.tsv'))
     sighan15_dataset = _build_dataset(data_path=os.path.join(data_path, 'train.sighan15-1.tsv')) + _build_dataset(
         data_path=os.path.join(data_path, 'train.sighan15-2.tsv'))
-    wang27k_trainset = _build_dataset(data_path=os.path.join(data_path, 'train.wang27k.tsv'))
+    # wang27k_trainset = _build_dataset(data_path=os.path.join(data_path, 'train.wang27k.tsv'))
 
 
-    train_all = sighan13_trainset + sighan14_dataset + sighan15_dataset + wang27k_trainset
+    # train_all = sighan13_trainset + sighan14_dataset + sighan15_dataset + wang27k_trainset
+    train_all = sighan13_trainset + sighan14_dataset + sighan15_dataset
     random.shuffle(train_all)
+    # 输出数据格式
+    print('*********************')
+    print(train_all[0])
+    print('*********************')
 
     def write_data_to_txt(data, out_file):
         with open(out_file, 'w', encoding='utf8',) as f:

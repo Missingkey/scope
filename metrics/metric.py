@@ -11,18 +11,19 @@ class Metric:
         self.tokenizer = transformers.BertTokenizer.from_pretrained(vocab_path)
 
     def metric(self, batches, pred_txt_path, pred_lbl_path, label_path, should_remove_de=False):
-        self.write_pred(batches, pred_txt_path, pred_lbl_path)
-        if should_remove_de:
-            remove_de(
-                input_path=pred_lbl_path,
-                output_path=pred_lbl_path,
-            )
-        scores = metric_file(
-            pred_path=pred_lbl_path,
-            targ_path=label_path,
-            #do_char_metric=False,
-        )
-        return scores
+        rtn = self.write_pred(batches, pred_txt_path, pred_lbl_path)
+        return rtn
+        # if should_remove_de:
+        #     remove_de(
+        #         input_path=pred_lbl_path,
+        #         output_path=pred_lbl_path,
+        #     )
+        # scores = metric_file(
+        #     pred_path=pred_lbl_path,
+        #     targ_path=label_path,
+        #     #do_char_metric=False,
+        # )
+        # return scores
 
     def write_pred(self, batches, pred_txt_path, pred_lbl_path):
         pred_txt_list, pred_lbl_list = [], []
@@ -43,6 +44,7 @@ class Metric:
         with open(pred_txt_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(pred_txt_list))
         print(f'Metric write to "{pred_txt_path}"')
+        return pred_txt_list
 
     def process_batch_item(self, batch, idx):
         length = len(batch['tokens_size'][idx])

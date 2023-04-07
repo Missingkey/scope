@@ -223,6 +223,11 @@ class CSCTask(pl.LightningModule):
         )
         return dataloader
 
+    def test_input_dataloader(self):
+        from datasets.collate_functions import collate_to_max_length_with_id
+        dataset = TestCSCDataset()
+
+
     def test13_dataloader(self):
         dataset = TestCSCDataset(
             data_path='data/test.sighan13.pkl',

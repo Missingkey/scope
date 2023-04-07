@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>错别字修改DEMO-3月14日</title>
+</head>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    function sentData() {
+        console.log("mdhmdhmdh");
+        var txt = document.getElementById('to_check_text').value;
+        var question = "请修改错别字：" + txt;
+        console.log(txt);
+        axios.post('/api/spell_check', {check_text: txt} )
+            .then(function (response) {
+                console.log(response);
+                document.getElementById('check_result').textContent = response.data
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        axios.post('http://43.153.30.183:8000/chat',
+            {
+                text: question
+            },
+            {
+                headers: { 
+                    'accept': 'application/json', 
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                } 
+            }
+        )
+            .then(function (response) {
+                console.log("******************")
+                console.log(response);
+                document.getElementById('gpt_result').textContent = "采用GPT修改的结果是:" + String(response.data);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+</script>
+
+<body>
+    <p>请输入你要改错的文本：</p>
+    <input type="text" id="to_check_text">
+    <button type="submit" id="correction" onclick="sentData()"> Submit</button>
+    <p id="check_result"></p>
+    <p id="gpt_result"></p>
+</body>
+
+</html>

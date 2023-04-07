@@ -1,10 +1,25 @@
 import argparse
 import os
 from pytorch_lightning import Trainer
+from datasets.bert_csc_dataset import TestCSCDataset
 from finetune.train import CSCTask
+from torch.utils.data.dataloader import DataLoader
+from functools import partial
+import torch
+from datasets.collate_functions import collate_to_max_length_with_id
 import re
+from flask import Flask, render_template, request
+from flask_cors import CORS
 
 
+
+
+
+app = Flask(__name__)
+CORS(app)
+correction_result = ""
+
+#* 对中文中的“的地得”处理
 def remove_de(input_path, output_path):
     with open(input_path) as f:
         data = f.read()
@@ -17,6 +32,7 @@ def remove_de(input_path, output_path):
     with open(output_path, 'w') as f:
         f.write(data)
 
+#* 处理参数
 def get_parser():
     parser = argparse.ArgumentParser(description="Training")
     parser.add_argument("--bert_path", required=True, type=str, help="bert config file")
@@ -39,9 +55,48 @@ def get_parser():
     parser.add_argument("--warmup_proporation", default=0.01, type=float, help="warmup proporation")
     return parser
 
+def create_data_loader(args):
+    dataset = TestCSCDataset(
+        data_path='/home/mdh19/004_csc_sl/SCOPE/data_process/list_data.pkl',
+        chinese_bert_path=args.bert_path,
+        max_length=args.max_length,
+    )
+        # self.tokenizer = dataset.tokenizer
+    dataloader = DataLoader(
+        dataset=dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        collate_fn=partial(collate_to_max_length_with_id, fill_values=[0, 0, 0, 0]),
+        drop_last=False,
+    )
+    return dataloader
+
+def my_predict(dataloader, args):
+    for i, data in enumerate(dataloader):
+        print(data)
+        output = [model.predict_step(data, i)]
+        from metrics.metric import Metric
+        metric = Metric(vocab_path=args.bert_path)
+        pred_txt_path = os.path.join(args.save_path, "preds.txt")
+        pred_lbl_path = os.path.join(args.save_path, "labels.txt")
+        out = metric.metric(
+            batches=output,
+            pred_txt_path=pred_txt_path,
+            pred_lbl_path=pred_lbl_path,
+            label_path=args.label_file,
+            should_remove_de=True if '13'in args.label_file else False
+            )
+        correction_result = out[0].split("\t")[1]
+        print(out[0].split("\t")[1])
+        return correction_result
+
 
 def main():
-    """main"""
+    """main, load model"""
+    global correction_result
+    global model
+    global args
     parser = get_parser()
     parser = Trainer.add_argparse_args(parser)
     args = parser.parse_args()
@@ -52,40 +107,47 @@ def main():
 
     model = CSCTask(args)
 
-    trainer = Trainer.from_argparse_args(args)
-    if '14' in args.label_file:
-        output=trainer.predict(model=model,dataloaders=model.test14_dataloader(),ckpt_path=args.ckpt_path)
-    elif '13'in args.label_file:
-        output=trainer.predict(model=model,dataloaders=model.test13_dataloader(),ckpt_path=args.ckpt_path)
-    else:
-        output=trainer.predict(model=model,dataloaders=model.test15_dataloader(),ckpt_path=args.ckpt_path)
-    # print(output[:3])
-    from metrics.metric import Metric
-    metric = Metric(vocab_path=args.bert_path)
-    pred_txt_path = os.path.join(args.save_path, "preds.txt")
-    pred_lbl_path = os.path.join(args.save_path, "labels.txt")
-    results = metric.metric(
-            batches=output,
-            pred_txt_path=pred_txt_path,
-            pred_lbl_path=pred_lbl_path,
-            label_path=args.label_file,
-            should_remove_de=True if '13'in args.label_file else False
-        )
-    print(results)
-    for ex in output:
-        ex['pred_idx'] = ex['post_pred_idx']
-    results = metric.metric(
-            batches=output,
-            pred_txt_path=pred_txt_path,
-            pred_lbl_path=pred_lbl_path,
-            label_path=args.label_file,
-            should_remove_de=True if '13'in args.label_file else False
-        )
-    print(results)
+    # trainer = Trainer.from_argparse_args(args)
+    model.load_state_dict(torch.load(args.ckpt_path)["state_dict"])
 
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/spell_check', methods=['POST'])
+def spell_check():
+    data = request.get_json()
+    print("*************")
+    print(data)
+    print("*************")
+    txt = data["check_text"]
+    print("*************")
+    print(txt)
+    print("*************")
+    os.system(f"python /home/mdh19/004_csc_sl/SCOPE/data_process/get_test_data_mdh.py \
+                --text {txt}")
+    dataloader = create_data_loader(args=args)
+    correction = my_predict(dataloader=dataloader, args=args)
+    return f'改错结果是：{correction}'
+
+
+# @app.route('/submit', methods=['POST'])
+# def submit():
+#     txt = request.form.get('name')
+#     os.system(f"python /home/mdh19/test_projects/SCOPE/data_process/get_test_data_mdh.py \
+#                 --text {txt}")
+#     #TODO 创建新的dataloader,然后进行predcit
+#     dataloader = create_data_loader(args=args)
+#     correction = my_predict(dataloader=dataloader, args=args)
+#     return f'改错结果是：{correction}'
 
 if __name__ == '__main__':
     from multiprocessing import freeze_support
 
     freeze_support()
+    #将model启动起来
     main()
+    app.run(host="0.0.0.0", port=11451, debug=False)
+    
+    

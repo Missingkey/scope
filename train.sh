@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 
-REPO_PATH=/home/ljh/GEC/SCOPE
-BERT_PATH=/home/ljh/GEC/SCOPE/FPT
+REPO_PATH=/home/mdh19/004_csc_sl/SCOPE
+BERT_PATH=/home/mdh19/004_csc_sl/SCOPE/FPT
 DATA_DIR=$REPO_PATH/data
 export PYTHONPATH="$PYTHONPATH:$REPO_PATH"
 
@@ -14,7 +14,7 @@ epoch=30
 OUTPUT_DIR=$REPO_PATH/outputs/bs${bs}epoch${epoch}
 
 mkdir -p $OUTPUT_DIR
-CUDA_VISIBLE_DEVICES=3 python -u $REPO_PATH/finetune/train.py \
+CUDA_VISIBLE_DEVICES=5 python -u $REPO_PATH/finetune/train.py \
 --bert_path $BERT_PATH \
 --data_dir $DATA_DIR \
 --save_path $OUTPUT_DIR \

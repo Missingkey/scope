@@ -76,6 +76,6 @@ class TestCSCDataset(ChineseBertDataset):
         example_id=self.data[idx]['id']
         src=self.data[idx]['src']
         tokens_size=self.data[idx]['tokens_size']
-        return input_ids, pinyin_ids, label,pinyin_label,example_id,src,tokens_size
+        return input_ids, pinyin_ids, label, pinyin_label,example_id,src,tokens_size
 
 
